@@ -3,39 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenTDD Mini (Web Clone)</title>
+  <title>OpenTDD Web</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <h1>OpenTDD Mini</h1>
-    <p>Geïnspireerd op OpenTTD — bouw rails, laat treinen rijden en verdien geld.</p>
+    <h1>OpenTDD Web</h1>
+    <p>Volledigere browser-versie met economie, meerdere cargo-types, routeplanning en AI-steden.</p>
   </header>
 
   <main>
     <section class="toolbar">
-      <button data-tool="rail" class="active">Rail bouwen</button>
-      <button data-tool="station">Station plaatsen</button>
-      <button data-tool="delete">Slopen</button>
-      <button id="spawn-train">Trein kopen (€500)</button>
-      <button id="pause-btn">Pauze</button>
+      <div class="tool-group">
+        <button data-tool="rail" class="active">Rail (€30)</button>
+        <button data-tool="station">Station (€250)</button>
+        <button data-tool="depot">Depot (€400)</button>
+        <button data-tool="bulldoze">Slopen</button>
+      </div>
+      <div class="tool-group">
+        <button id="pause-btn">Pauze</button>
+        <button id="speed-btn">Snelheid x1</button>
+      </div>
       <div class="stats">
-        <span id="money">€5000</span>
-        <span id="cargo">Goederen: 0</span>
-        <span id="score">Score: 0</span>
+        <span id="money">€100000</span>
+        <span id="date">Jaar 1950, maand 1</span>
+        <span id="rating">Bedrijfswaarde: €0</span>
       </div>
     </section>
 
-    <section class="game-wrap">
-      <canvas id="game" width="960" height="640" aria-label="OpenTDD speelveld"></canvas>
+    <section class="layout">
+      <div class="canvas-wrap">
+        <canvas id="game" width="1280" height="768" aria-label="OpenTDD speelveld"></canvas>
+      </div>
+
       <aside>
-        <h2>Doel</h2>
-        <ul>
-          <li>Bouw een rail tussen boerderijen (groen) en steden (blauw).</li>
-          <li>Plaats stations op railtegels.</li>
-          <li>Koop een trein en lever goederen af voor inkomsten.</li>
-        </ul>
-        <p>Klik op een tegel om te bouwen. Deze mini-clone draait volledig in HTML/CSS/JS.</p>
+        <section>
+          <h2>Stations</h2>
+          <select id="station-from"></select>
+          <select id="station-to"></select>
+          <button id="buy-train">Koop trein (€1500)</button>
+        </section>
+
+        <section>
+          <h2>Treinen</h2>
+          <ul id="train-list"></ul>
+        </section>
+
+        <section>
+          <h2>Markt</h2>
+          <p>Goederenprijs: <span id="price-goods">€80</span></p>
+          <p>Passagiersprijs: <span id="price-passengers">€55</span></p>
+          <p>Postprijs: <span id="price-mail">€40</span></p>
+        </section>
+
+        <section>
+          <h2>Doel</h2>
+          <ul>
+            <li>Verbind industrie en steden met stations + rail.</li>
+            <li>Maak routes tussen stations en koop treinen.</li>
+            <li>Verdien genoeg voor een bedrijfswaarde boven €250.000.</li>
+          </ul>
+        </section>
       </aside>
     </section>
   </main>
