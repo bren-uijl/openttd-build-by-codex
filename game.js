@@ -37,7 +37,6 @@ const grid = Array.from({ length: GRID_H }, () =>
     terrain: 'grass', rail: false, stationId: null, depot: false, townId: null, industryId: null
   }))
 );
-
 const towns = [];
 
 function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -49,7 +48,7 @@ function generateWorld() {
     for (let x = 0; x < GRID_W; x++) {
       const edge = x < 2 || y < 2 || x > GRID_W - 3 || y > GRID_H - 3;
       if (edge || Math.random() < 0.03) grid[y][x].terrain = 'water';
-      else if (Math.random() < 0.07) grid[y][x].terrain = 'mountain';
+      else if (Math.random() < 0.08) grid[y][x].terrain = 'mountain';
     }
   }
 
@@ -65,9 +64,9 @@ function generateWorld() {
     { type: 'post', produces: 'mail', color: '#d69e2e' }
   ];
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 10; i++) {
     const t = industryTypes[i % industryTypes.length];
-    const ind = { id: i + 1, ...t, x: rnd(3, GRID_W - 4), y: rnd(3, GRID_H - 4), stock: 0, productionRate: rnd(3, 8) };
+    const ind = { id: i + 1, ...t, x: rnd(3, GRID_W - 4), y: rnd(3, GRID_H - 4), stock: 0, productionRate: rnd(3, 9) };
     state.industries.push(ind);
     const tile = grid[ind.y][ind.x];
     tile.industryId = ind.id;
@@ -91,7 +90,6 @@ function setTool(tool) {
   state.tool = tool;
   document.querySelectorAll('[data-tool]').forEach((b) => b.classList.toggle('active', b.dataset.tool === tool));
 }
-
 document.querySelectorAll('[data-tool]').forEach((btn) => btn.addEventListener('click', () => setTool(btn.dataset.tool)));
 
 document.getElementById('pause-btn').addEventListener('click', (e) => {
@@ -116,7 +114,8 @@ document.getElementById('buy-train').addEventListener('click', () => {
   const path = findPath(from.x, from.y, to.x, to.y);
   if (!path.length) return;
 
-  const train = {
+  state.money -= 1500;
+  state.trains.push({
     id: state.trains.length + 1,
     x: from.x,
     y: from.y,
@@ -128,10 +127,7 @@ document.getElementById('buy-train').addEventListener('click', () => {
     capacity: 40,
     age: 0,
     profit: 0
-  };
-
-  state.money -= 1500;
-  state.trains.push(train);
+  });
   updateHUD();
   renderTrainList();
 });
@@ -146,8 +142,7 @@ canvas.addEventListener('click', (ev) => {
   if (tile.terrain === 'water' || tile.terrain === 'mountain') return;
 
   if (state.tool === 'rail' && state.money >= 30 && !tile.rail && !tile.stationId) {
-    tile.rail = true;
-    state.money -= 30;
+    tile.rail = true; state.money -= 30;
   } else if (state.tool === 'station' && state.money >= 250 && tile.rail && !tile.stationId) {
     const station = { id: state.stations.length + 1, name: `Station ${state.stations.length + 1}`, x, y, waiting: { goods: 0, passengers: 0, mail: 0 } };
     state.stations.push(station);
@@ -155,8 +150,7 @@ canvas.addEventListener('click', (ev) => {
     state.money -= 250;
     syncStationSelects();
   } else if (state.tool === 'depot' && state.money >= 400 && tile.rail && !tile.depot) {
-    tile.depot = true;
-    state.money -= 400;
+    tile.depot = true; state.money -= 400;
   } else if (state.tool === 'bulldoze') {
     tile.rail = false;
     tile.depot = false;
@@ -166,7 +160,6 @@ canvas.addEventListener('click', (ev) => {
       syncStationSelects();
     }
   }
-
   updateHUD();
 });
 
@@ -182,16 +175,14 @@ function findPath(sx, sy, ex, ey) {
   const key = (x, y) => `${x},${y}`;
   prev.set(key(sx, sy), null);
 
-  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
   while (q.length) {
     const cur = q.shift();
     if (cur.x === ex && cur.y === ey) break;
-    for (const [dx, dy] of dirs) {
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
       const nx = cur.x + dx;
       const ny = cur.y + dy;
-      if (!inBounds(nx, ny) || !grid[ny][nx].rail) continue;
       const k = key(nx, ny);
-      if (prev.has(k)) continue;
+      if (!inBounds(nx, ny) || !grid[ny][nx].rail || prev.has(k)) continue;
       prev.set(k, cur);
       q.push({ x: nx, y: ny });
     }
@@ -200,10 +191,7 @@ function findPath(sx, sy, ex, ey) {
   if (!prev.has(key(ex, ey))) return [];
   const path = [];
   let node = { x: ex, y: ey };
-  while (node) {
-    path.push(node);
-    node = prev.get(key(node.x, node.y));
-  }
+  while (node) { path.push(node); node = prev.get(key(node.x, node.y)); }
   return path.reverse();
 }
 
@@ -212,10 +200,7 @@ function nearestStation(x, y) {
   let dist = Infinity;
   for (const station of state.stations) {
     const d = manhattan({ x, y }, station);
-    if (d < dist && d <= 4) {
-      dist = d;
-      best = station;
-    }
+    if (d < dist && d <= 4) { dist = d; best = station; }
   }
   return best;
 }
@@ -234,7 +219,6 @@ function produceCargo() {
   for (const town of towns) {
     town.storage.passengers = Math.min(300, town.storage.passengers + Math.floor(town.population / 500));
     town.storage.mail = Math.min(250, town.storage.mail + Math.floor(town.population / 700));
-
     const station = nearestStation(town.x, town.y);
     if (!station) continue;
     const p = Math.min(12, town.storage.passengers);
@@ -250,43 +234,30 @@ function loadUnload(train) {
   const onStation = state.stations.find((s) => s.x === train.x && s.y === train.y);
   if (!onStation) return;
 
-  const atDestination = onStation.id === train.toId;
-  if (atDestination) {
-    const deliveredGoods = train.cargo.goods;
-    const deliveredPassengers = train.cargo.passengers;
-    const deliveredMail = train.cargo.mail;
-
-    const earn = deliveredGoods * state.prices.goods + deliveredPassengers * state.prices.passengers + deliveredMail * state.prices.mail;
+  if (onStation.id === train.toId) {
+    const earn = train.cargo.goods * state.prices.goods + train.cargo.passengers * state.prices.passengers + train.cargo.mail * state.prices.mail;
     train.profit += earn;
     state.money += earn;
+    train.cargo = { goods: 0, passengers: 0, mail: 0 };
 
-    train.cargo.goods = 0;
-    train.cargo.passengers = 0;
-    train.cargo.mail = 0;
-
-    const temp = train.fromId;
-    train.fromId = train.toId;
-    train.toId = temp;
-
+    [train.fromId, train.toId] = [train.toId, train.fromId];
     const from = state.stations.find((s) => s.id === train.fromId);
     const to = state.stations.find((s) => s.id === train.toId);
     if (from && to) {
       const newPath = findPath(from.x, from.y, to.x, to.y);
-      if (newPath.length) {
-        train.path = newPath;
-        train.pathIndex = 0;
-      }
+      if (newPath.length) { train.path = newPath; train.pathIndex = 0; }
     }
   }
 
-  const free = train.capacity - (train.cargo.goods + train.cargo.passengers + train.cargo.mail);
+  let free = train.capacity - (train.cargo.goods + train.cargo.passengers + train.cargo.mail);
   if (free <= 0) return;
-
   for (const type of ['goods', 'passengers', 'mail']) {
     if (onStation.waiting[type] <= 0) continue;
     const take = Math.min(free, onStation.waiting[type]);
     train.cargo[type] += take;
     onStation.waiting[type] -= take;
+    free -= take;
+    if (free <= 0) break;
   }
 }
 
@@ -300,10 +271,7 @@ function updateTrains() {
     train.y = next.y;
     loadUnload(train);
 
-    if (train.age % 500 === 0) {
-      state.money -= 200;
-      train.profit -= 200;
-    }
+    if (train.age % 500 === 0) { state.money -= 200; train.profit -= 200; }
   }
 }
 
@@ -315,15 +283,12 @@ function updateEconomy() {
   }
 
   state.companyValue = Math.floor(
-    state.money + state.trains.length * 1200 + state.stations.length * 400 + state.trains.reduce((s, t) => s + Math.max(0, t.profit), 0)
+    state.money + state.trains.length * 1200 + state.stations.length * 400 + state.trains.reduce((sum, train) => sum + Math.max(0, train.profit), 0)
   );
 
   if (state.tick % 300 === 0) {
     state.month += 1;
-    if (state.month > 12) {
-      state.month = 1;
-      state.year += 1;
-    }
+    if (state.month > 12) { state.month = 1; state.year += 1; }
   }
 }
 
@@ -345,52 +310,110 @@ function updateHUD() {
   ui.priceMail.textContent = `€${state.prices.mail}`;
 }
 
-function drawTile(x, y, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+function drawTerrain(tile, x, y) {
+  const px = x * TILE;
+  const py = y * TILE;
+
+  if (tile.terrain === 'water') {
+    const wave = Math.sin((state.tick + x * 4 + y * 6) / 14) * 8;
+    ctx.fillStyle = `hsl(${205 + wave * 0.2} 64% ${36 + wave * 0.15}%)`;
+    ctx.fillRect(px, py, TILE, TILE);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(px + 2, py + 8 + wave * 0.03);
+    ctx.lineTo(px + TILE - 2, py + 6 + wave * 0.03);
+    ctx.stroke();
+    return;
+  }
+
+  if (tile.terrain === 'mountain') {
+    ctx.fillStyle = '#637386';
+    ctx.fillRect(px, py, TILE, TILE);
+    ctx.fillStyle = '#8a98a8';
+    ctx.beginPath();
+    ctx.moveTo(px + 3, py + TILE - 2);
+    ctx.lineTo(px + TILE / 2, py + 4);
+    ctx.lineTo(px + TILE - 3, py + TILE - 2);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+
+  ctx.fillStyle = '#4d9f57';
+  ctx.fillRect(px, py, TILE, TILE);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(px + ((x + y) % 6), py + ((x * 2 + y) % 6), 2, 2);
 }
 
 function drawWorld() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   for (let y = 0; y < GRID_H; y++) {
     for (let x = 0; x < GRID_W; x++) {
       const tile = grid[y][x];
-      const terrainColor = tile.terrain === 'water' ? '#1d4e89' : tile.terrain === 'mountain' ? '#5f5f5f' : '#4d9f57';
-      drawTile(x, y, terrainColor);
-      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-      ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+      const px = x * TILE;
+      const py = y * TILE;
+
+      drawTerrain(tile, x, y);
+      ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+      ctx.strokeRect(px, py, TILE, TILE);
 
       if (tile.townId) {
-        ctx.fillStyle = '#bcd4ff';
-        ctx.fillRect(x * TILE + 5, y * TILE + 5, 14, 14);
+        ctx.fillStyle = '#dbeafe';
+        ctx.fillRect(px + 5, py + 10, 14, 10);
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(px + 8, py + 6, 8, 5);
       }
+
       if (tile.industryId) {
         const ind = state.industries.find((i) => i.id === tile.industryId);
         ctx.fillStyle = ind?.color || '#c77d00';
-        ctx.fillRect(x * TILE + 4, y * TILE + 4, 16, 16);
+        ctx.fillRect(px + 4, py + 8, 16, 12);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(px + 6, py + 4, 4, 5);
       }
+
       if (tile.rail) {
-        ctx.fillStyle = '#8b949e';
-        ctx.fillRect(x * TILE + 2, y * TILE + 10, TILE - 4, 4);
-        ctx.fillRect(x * TILE + 10, y * TILE + 2, 4, TILE - 4);
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px + 2, py + TILE / 2);
+        ctx.lineTo(px + TILE - 2, py + TILE / 2);
+        ctx.moveTo(px + TILE / 2, py + 2);
+        ctx.lineTo(px + TILE / 2, py + TILE - 2);
+        ctx.stroke();
+        ctx.lineWidth = 1;
       }
+
       if (tile.stationId) {
         ctx.fillStyle = '#f59e0b';
-        ctx.fillRect(x * TILE + 6, y * TILE + 6, 12, 12);
+        ctx.fillRect(px + 5, py + 8, 14, 11);
+        ctx.fillStyle = '#7c2d12';
+        ctx.fillRect(px + 8, py + 6, 8, 3);
       }
+
       if (tile.depot) {
-        ctx.fillStyle = '#ffedd5';
-        ctx.fillRect(x * TILE + 7, y * TILE + 7, 10, 10);
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(px + 6, py + 10, 12, 9);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(px + 7, py + 7, 10, 4);
       }
     }
   }
 
   for (const train of state.trains) {
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(train.x * TILE + 6, train.y * TILE + 6, 12, 12);
+    const px = train.x * TILE;
+    const py = train.y * TILE;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(px + 7, py + 17, 11, 4);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(px + 6, py + 9, 12, 8);
+    ctx.fillStyle = '#fca5a5';
+    ctx.fillRect(px + 8, py + 11, 4, 3);
   }
 
   if (state.companyValue >= 250000) {
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(0, canvas.height - 36, canvas.width, 36);
     ctx.fillStyle = '#bbf7d0';
     ctx.font = 'bold 18px sans-serif';
@@ -403,17 +426,8 @@ function seedRail() {
   const b = towns[1];
   if (!a || !b) return;
 
-  const y = a.y;
-  const xMin = Math.min(a.x, b.x);
-  const xMax = Math.max(a.x, b.x);
-  for (let x = xMin; x <= xMax; x++) {
-    if (grid[y][x].terrain !== 'water') grid[y][x].rail = true;
-  }
-  const yMin = Math.min(a.y, b.y);
-  const yMax = Math.max(a.y, b.y);
-  for (let yy = yMin; yy <= yMax; yy++) {
-    if (grid[yy][b.x].terrain !== 'water') grid[yy][b.x].rail = true;
-  }
+  for (let x = Math.min(a.x, b.x); x <= Math.max(a.x, b.x); x++) if (grid[a.y][x].terrain !== 'water') grid[a.y][x].rail = true;
+  for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++) if (grid[y][b.x].terrain !== 'water') grid[y][b.x].rail = true;
 }
 
 function loop() {
