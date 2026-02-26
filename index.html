@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenTDD Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>OpenTDD Web</h1>
+    <p>Volledigere browser-versie met economie, meerdere cargo-types, routeplanning en AI-steden.</p>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div class="tool-group">
+        <button data-tool="rail" class="active">Rail (€30)</button>
+        <button data-tool="station">Station (€250)</button>
+        <button data-tool="depot">Depot (€400)</button>
+        <button data-tool="bulldoze">Slopen</button>
+      </div>
+      <div class="tool-group">
+        <button id="pause-btn">Pauze</button>
+        <button id="speed-btn">Snelheid x1</button>
+      </div>
+      <div class="stats">
+        <span id="money">€100000</span>
+        <span id="date">Jaar 1950, maand 1</span>
+        <span id="rating">Bedrijfswaarde: €0</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="canvas-wrap">
+        <canvas id="game" width="1280" height="768" aria-label="OpenTDD speelveld"></canvas>
+      </div>
+
+      <aside>
+        <section>
+          <h2>Stations</h2>
+          <select id="station-from"></select>
+          <select id="station-to"></select>
+          <button id="buy-train">Koop trein (€1500)</button>
+        </section>
+
+        <section>
+          <h2>Treinen</h2>
+          <ul id="train-list"></ul>
+        </section>
+
+        <section>
+          <h2>Markt</h2>
+          <p>Goederenprijs: <span id="price-goods">€80</span></p>
+          <p>Passagiersprijs: <span id="price-passengers">€55</span></p>
+          <p>Postprijs: <span id="price-mail">€40</span></p>
+        </section>
+
+        <section>
+          <h2>Legenda</h2>
+          <ul>
+            <li>🟧 Station</li>
+            <li>🟥 Trein</li>
+            <li>🟦 Stad</li>
+            <li>🟩 Industrie</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
